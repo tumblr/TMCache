@@ -76,6 +76,15 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
  */
 - (instancetype)initWithName:(NSString *)name;
 
+/**
+ Initializer that configures a specific prefix for the cache directory.
+ 
+ @param prefix The prefix of the cache on disk.
+ @param name The name of the cache.
+ @result A new cache with the specified name.
+ */
+- (instancetype)initWithPrefix:(NSString *)prefix name:(NSString *)name;
+
 #pragma mark -
 /// @name Asynchronous Methods
 

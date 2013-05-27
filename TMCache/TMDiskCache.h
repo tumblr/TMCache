@@ -39,6 +39,11 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
 @property (readonly) NSString *name;
 
 /**
+ The prefix of this cache, used to create a directory under Library/Caches.
+ */
+@property (readonly) NSString *prefix;
+
+/**
  The URL of the directory used by this cache, usually `Library/Caches/com.tumblr.TMDiskCache.(name)`
  
  @warning Do not interact with files under this URL except on the <sharedQueue>.
@@ -141,6 +146,15 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
  @result A new cache with the specified name.
  */
 - (instancetype)initWithName:(NSString *)name;
+
+/**
+ Initializer that configures a specific prefix for the cache directory.
+ 
+ @param prefix The prefix of the cache.
+ @param name The name of the cache.
+ @result A new cache with the specified name and prefix.
+ */
+- (instancetype)initWithPrefix:(NSString *)prefix name:(NSString *)name;
 
 #pragma mark -
 /// @name Asynchronous Methods

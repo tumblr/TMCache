@@ -25,16 +25,22 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (instancetype)initWithName:(NSString *)name
 {
-    if (!name)
+    return [self initWithPrefix:TMCachePrefix name:name];
+}
+
+- (instancetype)initWithPrefix:(NSString *)prefix name:(NSString *)name
+{
+    if (!name || !prefix)
         return nil;
 
     if (self = [super init]) {
         _name = [name copy];
+        _prefix = [prefix copy];
         
-        NSString *queueName = [[NSString alloc] initWithFormat:@"%@.%p", TMCachePrefix, self];
+        NSString *queueName = [[NSString alloc] initWithFormat:@"%@.%p", prefix, self];
         _queue = dispatch_queue_create([queueName UTF8String], DISPATCH_QUEUE_CONCURRENT);
 
-        _diskCache = [[TMDiskCache alloc] initWithName:_name];
+        _diskCache = [[TMDiskCache alloc] initWithPrefix:_prefix name:_name];
         _memoryCache = [[TMMemoryCache alloc] init];
     }
     return self;
@@ -42,7 +48,7 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (NSString *)description
 {
-    return [[NSString alloc] initWithFormat:@"%@.%@.%p", TMCachePrefix, _name, self];
+    return [[NSString alloc] initWithFormat:@"%@.%@.%p", _prefix, _name, self];
 }
 
 + (instancetype)sharedCache

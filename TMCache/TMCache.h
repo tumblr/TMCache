@@ -32,6 +32,11 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
 @property (readonly) NSString *name;
 
 /**
+ The prefix of this cache, used to create the <diskCache>.
+ */
+@property (readonly) NSString *prefix;
+
+/**
  A concurrent queue on which blocks passed to the asynchronous access methods are run.
  */
 @property (readonly) dispatch_queue_t queue;

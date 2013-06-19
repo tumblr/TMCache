@@ -25,6 +25,11 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (instancetype)initWithName:(NSString *)name
 {
+    return [self initWithName:name rootPath:[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]];
+}
+
+- (instancetype)initWithName:(NSString *)name rootPath:(NSString *)rootPath
+{
     if (!name)
         return nil;
 
@@ -34,7 +39,7 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
         NSString *queueName = [[NSString alloc] initWithFormat:@"%@.%p", TMCachePrefix, self];
         _queue = dispatch_queue_create([queueName UTF8String], DISPATCH_QUEUE_CONCURRENT);
 
-        _diskCache = [[TMDiskCache alloc] initWithName:_name];
+        _diskCache = [[TMDiskCache alloc] initWithName:_name rootPath:rootPath];
         _memoryCache = [[TMMemoryCache alloc] init];
     }
     return self;

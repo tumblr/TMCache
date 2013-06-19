@@ -61,6 +61,11 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)objectForKey:(NSString *)key block:(TMCacheObjectBlock)block
 {
+    [self objectForKey:key readBlock:NULL block:block];
+}
+
+- (void)objectForKey:(NSString *)key readBlock:(TMCacheReadBlock)readBlock block:(TMCacheObjectBlock)block
+{
     if (!key || !block)
         return;
 
@@ -92,8 +97,19 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
                 });
             } else {
                 __weak TMCache *weakSelf = strongSelf;
+                
+                TMDiskCacheReadBlock diskReadBlock = NULL;
+                if (readBlock) {
+                    diskReadBlock = ^id(TMDiskCache *cache, NSString *key, NSURL *fileURL) {
+                        TMCache *strongSelf = weakSelf;
+                        if (!strongSelf)
+                            return nil;
 
-                [strongSelf->_diskCache objectForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
+                        return readBlock(strongSelf, key, fileURL);
+                    };
+                }
+
+                [strongSelf->_diskCache objectForKey:key readBlock:diskReadBlock block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
                     TMCache *strongSelf = weakSelf;
                     if (!strongSelf)
                         return;
@@ -114,6 +130,11 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 }
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMCacheObjectBlock)block
+{
+    return [self setObject:object forKey:key writeBlock:NULL block:block];
+}
+
+- (void)setObject:(id)object forKey:(NSString *)key writeBlock:(TMCacheWriteBlock)writeBlock block:(TMCacheObjectBlock)block
 {
     if (!key || !object)
         return;
@@ -136,8 +157,21 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
         };
     }
     
+    __weak TMCache *weakSelf = self;
+
+    TMDiskCacheWriteBlock diskWriteBlock = NULL;
+    if (writeBlock) {
+        diskWriteBlock = ^BOOL(TMDiskCache *cache, NSString *key, NSURL *fileURL, id object) {
+            TMCache *strongSelf = weakSelf;
+            if (!strongSelf)
+                return NO;
+            
+            return writeBlock(strongSelf, key, fileURL, object);
+        };
+    }
+
     [_memoryCache setObject:object forKey:key block:memBlock];
-    [_diskCache setObject:object forKey:key block:diskBlock];
+    [_diskCache setObject:object forKey:key writeBlock:diskWriteBlock block:diskBlock];
     
     if (group) {
         __weak TMCache *weakSelf = self;
@@ -287,6 +321,11 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (id)objectForKey:(NSString *)key
 {
+    return [self objectForKey:key readBlock:NULL];
+}
+
+- (id)objectForKey:(NSString *)key readBlock:(TMCacheReadBlock)readBlock
+{
     if (!key)
         return nil;
     
@@ -294,7 +333,7 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    [self objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
+    [self objectForKey:key readBlock:readBlock block:^(TMCache *cache, NSString *key, id object) {
         objectForKey = object;
         dispatch_semaphore_signal(semaphore);
     }];
@@ -310,12 +349,17 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
 {
+    [self setObject:object forKey:key writeBlock:NULL];
+}
+
+- (void)setObject:(id)object forKey:(NSString *)key writeBlock:(TMCacheWriteBlock)writeBlock
+{
     if (!object || !key)
         return;
     
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    [self setObject:object forKey:key block:^(TMCache *cache, NSString *key, id object) {
+    [self setObject:object forKey:key writeBlock:writeBlock block:^(TMCache *cache, NSString *key, id object) {
         dispatch_semaphore_signal(semaphore);
     }];
 

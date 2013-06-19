@@ -312,6 +312,11 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 - (void)objectForKey:(NSString *)key block:(TMDiskCacheObjectBlock)block
 {
+    [self objectForKey:key readBlock:NULL block:block];
+}
+
+- (void)objectForKey:(NSString *)key readBlock:(TMDiskCacheReadBlock)readBlock block:(TMDiskCacheObjectBlock)block
+{
     NSDate *now = [[NSDate alloc] init];
 
     if (!key || !block)
@@ -328,7 +333,10 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
         id <NSCoding> object = nil;
 
         if ([[NSFileManager defaultManager] fileExistsAtPath:[fileURL path]]) {
-            object = [NSKeyedUnarchiver unarchiveObjectWithFile:[fileURL path]];
+            if (!readBlock)
+                object = [NSKeyedUnarchiver unarchiveObjectWithFile:[fileURL path]];
+            else
+                object = readBlock(self, key, fileURL);
             [strongSelf setFileModificationDate:now forURL:fileURL];
         }
 
@@ -364,6 +372,11 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMDiskCacheObjectBlock)block
 {
+    [self setObject:object forKey:key writeBlock:NULL block:block];
+}
+
+- (void)setObject:(id)object forKey:(NSString *)key writeBlock:(TMDiskCacheWriteBlock)writeBlock block:(TMDiskCacheObjectBlock)block
+{
     NSDate *now = [[NSDate alloc] init];
 
     if (!key || !object)
@@ -386,7 +399,11 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
             strongSelf->_willAddObjectBlock(strongSelf, key, object, fileURL);
 
         NSError *error = nil;
-        BOOL written = [NSKeyedArchiver archiveRootObject:object toFile:[fileURL path]];
+        BOOL written;
+        if (!writeBlock)
+            written = [NSKeyedArchiver archiveRootObject:object toFile:[fileURL path]];
+        else
+            written = writeBlock(self, key, fileURL, object);
         TMDiskCacheError(error);
 
         if (written) {
@@ -598,7 +615,12 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 #pragma mark - Public Synchronous Methods -
 
-- (id <NSCoding>)objectForKey:(NSString *)key
+- (id)objectForKey:(NSString *)key
+{
+    return [self objectForKey:key readBlock:NULL];
+}
+
+- (id)objectForKey:(NSString *)key readBlock:(TMDiskCacheReadBlock)readBlock
 {
     if (!key)
         return nil;
@@ -607,7 +629,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    [self objectForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
+    [self objectForKey:key readBlock:readBlock block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
         objectForKey = object;
         dispatch_semaphore_signal(semaphore);
     }];
@@ -646,12 +668,17 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
 {
+    [self setObject:object forKey:key writeBlock:NULL];
+}
+
+- (void)setObject:(id)object forKey:(NSString *)key writeBlock:(TMDiskCacheWriteBlock)writeBlock
+{
     if (!object || !key)
         return;
     
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    [self setObject:object forKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
+    [self setObject:object forKey:key writeBlock:writeBlock block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
         dispatch_semaphore_signal(semaphore);
     }];
 

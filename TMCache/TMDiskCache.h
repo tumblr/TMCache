@@ -170,6 +170,21 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
 - (void)fileURLForKey:(NSString *)key block:(TMDiskCacheObjectBlock)block;
 
 /**
+ Retrieves the fileURL for the specified key without actually reading the data from disk. This method
+ returns immediately and executes the passed block as soon as the object is available on the serial
+ <sharedQueue>.
+ 
+ @warning Access is protected for the duration of the block, but to maintain safe disk access do not
+ access this fileURL after the block has ended. Do all work on the <sharedQueue>.
+ 
+ @param key The key associated with the requested object.
+ @param updateFileModificationDate Set to NO to prevent update of the file modification date
+        if you only need to know if the file is cached.
+ @param block A block to be executed serially when the file URL is available.
+ */
+- (void)fileURLForKey:(NSString *)key updateFileModificationDate:(BOOL)updateFileModificationDate block:(TMDiskCacheObjectBlock)block;
+
+/**
  Stores an object in the cache for the specified key. This method returns immediately and executes the
  passed block as soon as the object has been stored.
  
@@ -257,6 +272,19 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
  @result The file URL for the specified key.
  */
 - (NSURL *)fileURLForKey:(NSString *)key;
+
+/**
+ Retrieves the file URL for the specified key. This method blocks the calling thread until the
+ url is available. Do not use this URL anywhere but on the <sharedQueue>. This method probably
+ shouldn't even exist, just use the asynchronous one.
+ 
+ @see fileURLForKey:block:
+ @param key The key associated with the object.
+ @param updateFileModificationDate Set to NO to prevent update of the file modification date
+        if you only need to know if the file is cached.
+ @result The file URL for the specified key.
+ */
+- (NSURL *)fileURLForKey:(NSString *)key updateFileModificationDate:(BOOL)updateFileModificationDate;
 
 /**
  Stores an object in the cache for the specified key. This method blocks the calling thread until

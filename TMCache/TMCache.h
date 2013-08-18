@@ -103,6 +103,17 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
 - (void)removeObjectForKey:(NSString *)key block:(TMCacheObjectBlock)block;
 
 /**
+ Removes the object for the specified key if object is older than specified date.
+ This method returns immediately and executes the passed
+ block after the object has been removed, potentially in parallel with other blocks on the <queue>.
+ 
+ @param key The key associated with the object to be removed.
+ @param date The date object has to be older than to be removed.
+ @param block A block to be executed concurrently after the object has been removed, or nil.
+ */
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date block:(TMCacheObjectBlock)block;
+
+/**
  Removes all objects from the cache that have not been used since the specified date. This method returns immediately and
  executes the passed block after the cache has been trimmed, potentially in parallel with other blocks on the <queue>.
  
@@ -147,6 +158,16 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
  @param key The key associated with the object to be removed.
  */
 - (void)removeObjectForKey:(NSString *)key;
+
+/**
+ Removes the object for the specified key if object is older than specified date.
+ This method blocks the calling thread until the object
+ has been removed.
+ 
+ @param key The key associated with the object to be removed.
+ @param date The date object has to be older than to be removed.
+ */
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date;
 
 /**
  Removes all objects from the cache that have not been used since the specified date.

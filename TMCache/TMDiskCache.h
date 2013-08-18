@@ -189,6 +189,17 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
 - (void)removeObjectForKey:(NSString *)key block:(TMDiskCacheObjectBlock)block;
 
 /**
+ Removes the object for the specified key if older than specified date.
+ This method returns immediately and executes the passed block
+ as soon as the object has been removed.
+ 
+ @param key The key associated with the object to be removed.
+ @param date The date object has to be older than to be removed.
+ @param block A block to be executed serially after the object has been removed, or nil.
+ */
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date block:(TMDiskCacheObjectBlock)block;
+
+/**
  Removes all objects from the cache that have not been used since the specified date.
  This method returns immediately and executes the passed block as soon as the cache has been trimmed.
 
@@ -277,6 +288,15 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
 - (void)removeObjectForKey:(NSString *)key;
 
 /**
+ Removes the object for the specified key if older than specified date. This method blocks the calling thread until the object
+ has been removed.
+ 
+ @param key The key associated with the object to be removed.
+ @param date The date object has to be older than to be removed.
+ */
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date;
+
+/**
  Removes all objects from the cache that have not been used since the specified date.
  This method blocks the calling thread until the cache has been trimmed.
 
@@ -316,5 +336,17 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
  Instead use the asynchronous version, <enumerateObjectsWithBlock:completionBlock:>.
  */
 - (void)enumerateObjectsWithBlock:(TMDiskCacheObjectBlock)block;
+
+/**
+ Retrieves store date for the specified key.
+
+ @warning This property is technically safe to access from any thread, but it reflects the value *right now*,
+ not taking into account any pending operations. In most cases this value should only be read from a block on the
+ <sharedQueue>, which will ensure its accuracy and prevent it from changing during the lifetime of the block.
+
+ @param key The key associated with the object.
+ @result The store date for the specified key.
+ */
+- (NSDate *)storeDateForKey:(NSString *)key;
 
 @end

@@ -99,6 +99,7 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
                         return;
                     
                     [strongSelf->_memoryCache setObject:object forKey:key block:nil];
+                    [strongSelf->_memoryCache setStoreDate:[cache storeDateForKey:key] forKey:key];
                     
                     __weak TMCache *weakSelf = strongSelf;
                     
@@ -178,6 +179,46 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
     [_memoryCache removeObjectForKey:key block:memBlock];
     [_diskCache removeObjectForKey:key block:diskBlock];
+    
+    if (group) {
+        __weak TMCache *weakSelf = self;
+        dispatch_group_notify(group, _queue, ^{
+            TMCache *strongSelf = weakSelf;
+            if (strongSelf)
+                block(strongSelf, key, nil);
+        });
+        
+        #if !OS_OBJECT_USE_OBJC
+        dispatch_release(group);
+        #endif
+    }
+}
+
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date block:(TMCacheObjectBlock)block
+{
+    if (!key)
+        return;
+
+    dispatch_group_t group = nil;
+    TMMemoryCacheObjectBlock memBlock = nil;
+    TMDiskCacheObjectBlock diskBlock = nil;
+    
+    if (block) {
+        group = dispatch_group_create();
+        dispatch_group_enter(group);
+        dispatch_group_enter(group);
+        
+        memBlock = ^(TMMemoryCache *cache, NSString *key, id object) {
+            dispatch_group_leave(group);
+        };
+        
+        diskBlock = ^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
+            dispatch_group_leave(group);
+        };
+    }
+    
+    [_memoryCache removeObjectForKey:key olderThan:date block:memBlock];
+    [_diskCache removeObjectForKey:key olderThan:date block:diskBlock];
     
     if (group) {
         __weak TMCache *weakSelf = self;
@@ -334,6 +375,24 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
     [self removeObjectForKey:key block:^(TMCache *cache, NSString *key, id object) {
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+
+    #if !OS_OBJECT_USE_OBJC
+    dispatch_release(semaphore);
+    #endif
+}
+
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date
+{
+    if (!key)
+        return;
+
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    [self removeObjectForKey:key olderThan:date block:^(TMCache *cache, NSString *key, id object) {
         dispatch_semaphore_signal(semaphore);
     }];
 

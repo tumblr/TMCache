@@ -166,6 +166,16 @@ typedef void (^TMMemoryCacheObjectBlock)(TMMemoryCache *cache, NSString *key, id
 - (void)removeObjectForKey:(NSString *)key block:(TMMemoryCacheObjectBlock)block;
 
 /**
+ Removes the object for the specified key if older than specified date. This method returns immediately and executes the passed
+ block after the object has been removed, potentially in parallel with other blocks on the <queue>.
+ 
+ @param key The key associated with the object to be removed.
+ @param date The date object has to be older than to be removed.
+ @param block A block to be executed concurrently after the object has been removed, or nil.
+ */
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date block:(TMMemoryCacheObjectBlock)block;
+
+/**
  Removes all objects from the cache that have not been used since the specified date.
  This method returns immediately and executes the passed block after the cache has been trimmed,
  potentially in parallel with other blocks on the <queue>.
@@ -255,6 +265,15 @@ typedef void (^TMMemoryCacheObjectBlock)(TMMemoryCache *cache, NSString *key, id
 - (void)removeObjectForKey:(NSString *)key;
 
 /**
+ Removes the object for the specified key if older than specified date. This method blocks the calling thread until the object
+ has been removed.
+ 
+ @param key The key associated with the object to be removed.
+ @param date The date object has to be older than to be removed.
+ */
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date;
+
+/**
  Removes all objects from the cache that have not been used since the specified date.
  This method blocks the calling thread until the cache has been trimmed.
  
@@ -294,5 +313,13 @@ typedef void (^TMMemoryCacheObjectBlock)(TMMemoryCache *cache, NSString *key, id
  
  */
 - (void)enumerateObjectsWithBlock:(TMMemoryCacheObjectBlock)block;
+
+/**
+ Sets a stores date for the specified key.
+ 
+ @param date A date to store for the given key.
+ @param key A key to associate with the date.
+ */
+- (void)setStoreDate:(NSDate *)date forKey:(NSString *)key;
 
 @end

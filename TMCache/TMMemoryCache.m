@@ -10,6 +10,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 #endif
 @property (strong, nonatomic) NSMutableDictionary *dictionary;
 @property (strong, nonatomic) NSMutableDictionary *dates;
+@property (strong, nonatomic) NSMutableDictionary *storeDates;
 @property (strong, nonatomic) NSMutableDictionary *costs;
 @end
 
@@ -47,6 +48,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
         _dictionary = [[NSMutableDictionary alloc] init];
         _dates = [[NSMutableDictionary alloc] init];
+        _storeDates = [[NSMutableDictionary alloc] init];
         _costs = [[NSMutableDictionary alloc] init];
 
         _willAddObjectBlock = nil;
@@ -143,6 +145,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
     [_dictionary removeObjectForKey:key];
     [_dates removeObjectForKey:key];
+    [_storeDates removeObjectForKey:key];
     [_costs removeObjectForKey:key];
 
     if (_didRemoveObjectBlock)
@@ -276,6 +279,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
         [strongSelf->_dictionary setObject:object forKey:key];
         [strongSelf->_dates setObject:now forKey:key];
+        [strongSelf->_storeDates setObject:now forKey:key];
         [strongSelf->_costs setObject:@(cost) forKey:key];
 
         _totalCost += cost;
@@ -320,6 +324,20 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
             });
         }
     });
+}
+
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date block:(TMMemoryCacheObjectBlock)block
+{
+    if (!key)
+        return;
+
+    NSDate *storeDate = [_storeDates objectForKey:key];
+
+    if ([storeDate compare:date] == NSOrderedAscending) {
+        [self removeObjectForKey:key block:block];
+    } else {
+        block(self, key, nil);
+    }
 }
 
 - (void)trimToDate:(NSDate *)trimDate block:(TMMemoryCacheBlock)block
@@ -410,6 +428,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
         [strongSelf->_dictionary removeAllObjects];
         [strongSelf->_dates removeAllObjects];
+        [strongSelf->_storeDates removeAllObjects];
         [strongSelf->_costs removeAllObjects];
         
         strongSelf->_totalCost = 0;
@@ -523,6 +542,18 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     #endif
 }
 
+- (void)removeObjectForKey:(NSString *)key olderThan:(NSDate *)date
+{
+    if (!key)
+        return;
+
+    NSDate *storeDate = [_storeDates objectForKey:key];
+
+    if ([storeDate compare:date] == NSOrderedAscending) {
+        [self removeObjectForKey:key];
+    }
+}
+
 - (void)trimToDate:(NSDate *)date
 {
     if (!date)
@@ -607,6 +638,22 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     #if !OS_OBJECT_USE_OBJC
     dispatch_release(semaphore);
     #endif
+}
+
+- (void)setStoreDate:(NSDate *)date forKey:(NSString *)key
+{
+    if (!date)
+        return;
+
+    __block TMMemoryCache *weakSelf = self;
+    
+    dispatch_barrier_async(_queue, ^{
+        TMMemoryCache *strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        
+        [strongSelf->_storeDates setObject:date forKey:key];
+    });
 }
 
 #pragma mark - Public Thread Safe Accessors -

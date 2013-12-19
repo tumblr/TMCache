@@ -42,6 +42,13 @@ typedef void (^TMMemoryCacheObjectBlock)(TMMemoryCache *cache, NSString *key, id
 @property (assign) NSUInteger costLimit;
 
 /**
+ The default cost when objects are added with <setObject:forKey:block:> and <setObject:forKey:>, such
+ as when using <TMCache>. This only affects objects that are added subsequently.
+ Defaults to `0`.
+ */
+@property (assign) NSUInteger defaultCost;
+
+/**
  The maximum number of seconds an object is allowed to exist in the cache. Setting this to a value
  greater than `0.0` will start a recurring GCD timer with the same period that calls <trimToDate:>.
  Setting it back to `0.0` will stop the timer. Defaults to `0.0`.

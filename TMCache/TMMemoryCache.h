@@ -51,6 +51,12 @@ typedef void (^TMMemoryCacheObjectBlock)(TMMemoryCache *cache, NSString *key, id
 @property (assign) NSTimeInterval ageLimit;
 
 /**
+ A flag that determines whether reading from the cache should update the entry's modification
+ date.  Cache objects become stale if they haven't been overwritten wihtin the age limit.  Default is YES.
+ */
+@property (assign) BOOL updateEntryDateOnRead;
+
+/**
  When `YES` on iOS the cache will remove all objects when the app receives a memory warning.
  Defaults to `YES`.
  */

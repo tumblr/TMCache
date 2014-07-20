@@ -18,6 +18,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 @synthesize ageLimit = _ageLimit;
 @synthesize costLimit = _costLimit;
 @synthesize totalCost = _totalCost;
+@synthesize updateEntryDateOnRead = _updateEntryDateOnRead;
 @synthesize willAddObjectBlock = _willAddObjectBlock;
 @synthesize willRemoveObjectBlock = _willRemoveObjectBlock;
 @synthesize willRemoveAllObjectsBlock = _willRemoveAllObjectsBlock;
@@ -63,6 +64,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
         _ageLimit = 0.0;
         _costLimit = 0;
         _totalCost = 0;
+        _updateEntryDateOnRead = YES;
 
         _removeAllObjectsOnMemoryWarning = YES;
         _removeAllObjectsOnEnteringBackground = YES;
@@ -243,7 +245,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
             __weak TMMemoryCache *weakSelf = strongSelf;
             dispatch_barrier_async(strongSelf->_queue, ^{
                 TMMemoryCache *strongSelf = weakSelf;
-                if (strongSelf)
+                if (strongSelf && _updateEntryDateOnRead)
                     [strongSelf->_dates setObject:now forKey:key];
             });
         }
@@ -865,6 +867,30 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     });
     
     return cost;
+}
+
+- (BOOL)updateEntryDateOnRead
+{
+  __block BOOL updateEntryDateOnRead = NO;
+  
+  dispatch_sync(_queue, ^{
+    updateEntryDateOnRead = _updateEntryDateOnRead;
+  });
+  
+  return updateEntryDateOnRead;
+}
+
+- (void)setUpdateEntryDateOnRead:(BOOL)updateEntryDateOnRead
+{
+    __weak TMMemoryCache *weakSelf = self;
+  
+    dispatch_barrier_async(_queue, ^{
+        TMMemoryCache *strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+    
+        strongSelf->_updateEntryDateOnRead = updateEntryDateOnRead;
+  });
 }
 
 @end

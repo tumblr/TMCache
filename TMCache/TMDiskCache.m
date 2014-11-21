@@ -178,7 +178,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     dispatch_once(&predicate, ^{
         sharedTrashURL = [[[NSURL alloc] initFileURLWithPath:NSTemporaryDirectory()] URLByAppendingPathComponent:TMDiskCachePrefix isDirectory:YES];
         
-        dispatch_async([self sharedTrashQueue], ^{
+        dispatch_sync([self sharedTrashQueue], ^{
             if (![[NSFileManager defaultManager] fileExistsAtPath:[sharedTrashURL path]]) {
                 NSError *error = nil;
                 [[NSFileManager defaultManager] createDirectoryAtURL:sharedTrashURL

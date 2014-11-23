@@ -30,7 +30,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (id)init
+- (instancetype)init
 {
     if (self = [super init]) {
         NSString *queueName = [[NSString alloc] initWithFormat:@"%@.%p", TMMemoryCachePrefix, self];

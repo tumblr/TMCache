@@ -82,7 +82,7 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
  @param rootPath The path of the cache on disk.
  @result A new cache with the specified name.
  */
-- (instancetype)initWithName:(NSString *)name rootPath:(NSString *)rootPath;
+- (instancetype)initWithName:(NSString *)name rootPath:(NSString *)rootPath NS_DESIGNATED_INITIALIZER;
 
 #pragma mark -
 /// @name Asynchronous Methods

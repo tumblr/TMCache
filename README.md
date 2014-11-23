@@ -54,7 +54,7 @@ Add [TMCache](http://cocoapods.org/?q=name%3ATMCache) to your `Podfile` and run 
 
 ## Requirements ##
 
-__TMCache__ requires iOS 5.0 or OS X 10.7 and greater.
+__TMCache__ requires iOS 7.0 or OS X 10.7 and greater.
 
 ## Contact ##
 

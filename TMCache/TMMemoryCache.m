@@ -1,6 +1,6 @@
 #import "TMMemoryCache.h"
 
-NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
+static NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
 @interface TMMemoryCache ()
 @property (strong, nonatomic) dispatch_queue_t queue;

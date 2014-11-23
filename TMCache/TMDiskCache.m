@@ -12,8 +12,8 @@
 #define TMCacheEndBackgroundTask() \
     [[UIApplication sharedApplication] endBackgroundTask:taskID];
 
-NSString * const TMDiskCachePrefix = @"com.tumblr.TMDiskCache";
-NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
+static NSString * const TMDiskCachePrefix = @"com.tumblr.TMDiskCache";
+static NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 @interface TMDiskCache ()
 @property (assign) NSUInteger byteCount;

@@ -1,8 +1,8 @@
 #import "TMCacheTests.h"
 #import "TMCache.h"
 
-NSString * const TMCacheTestName = @"TMCacheTest";
 NSTimeInterval TMCacheTestBlockTimeout = 5.0;
+static NSString * const TMCacheTestName = @"TMCacheTest";
 
 @interface TMCacheTests ()
 @property (strong, nonatomic) TMCache *cache;

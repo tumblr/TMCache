@@ -1,7 +1,7 @@
 #import "TMCache.h"
 
-NSString * const TMCachePrefix = @"com.tumblr.TMCache";
-NSString * const TMCacheSharedName = @"TMCacheShared";
+static NSString * const TMCachePrefix = @"com.tumblr.TMCache";
+static NSString * const TMCacheSharedName = @"TMCacheShared";
 
 @interface TMCache ()
 @property (strong, nonatomic) dispatch_queue_t queue;

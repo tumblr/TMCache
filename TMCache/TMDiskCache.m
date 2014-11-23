@@ -4,15 +4,13 @@
                                     [[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
                                     __LINE__, [error localizedDescription]); }
 
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_4_0
-    #define TMCacheStartBackgroundTask() UIBackgroundTaskIdentifier taskID = UIBackgroundTaskInvalid; \
-            taskID = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{ \
-            [[UIApplication sharedApplication] endBackgroundTask:taskID]; }];
-    #define TMCacheEndBackgroundTask() [[UIApplication sharedApplication] endBackgroundTask:taskID];
-#else
-    #define TMCacheStartBackgroundTask()
-    #define TMCacheEndBackgroundTask()
-#endif
+#define TMCacheStartBackgroundTask() \
+    UIBackgroundTaskIdentifier taskID = UIBackgroundTaskInvalid; \
+    taskID = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{ \
+        [[UIApplication sharedApplication] endBackgroundTask:taskID]; \
+    }];
+#define TMCacheEndBackgroundTask() \
+    [[UIApplication sharedApplication] endBackgroundTask:taskID];
 
 NSString * const TMDiskCachePrefix = @"com.tumblr.TMDiskCache";
 NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";

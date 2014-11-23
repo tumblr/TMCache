@@ -58,14 +58,12 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
         _removeAllObjectsOnMemoryWarning = YES;
         _removeAllObjectsOnEnteringBackground = YES;
 
-        #if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_4_0
         for (NSString *name in @[UIApplicationDidReceiveMemoryWarningNotification, UIApplicationDidEnterBackgroundNotification]) {
             [[NSNotificationCenter defaultCenter] addObserver:self
                                                      selector:@selector(didObserveApocalypticNotification:)
                                                          name:name
                                                        object:[UIApplication sharedApplication]];
         }
-        #endif
     }
     return self;
 }
@@ -86,8 +84,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
 - (void)didObserveApocalypticNotification:(NSNotification *)notification
 {
-    #if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_4_0
-
     if ([[notification name] isEqualToString:UIApplicationDidReceiveMemoryWarningNotification]) {
         if (self.removeAllObjectsOnMemoryWarning)
             [self removeAllObjects:nil];
@@ -117,8 +113,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
                 strongSelf->_didEnterBackgroundBlock(strongSelf);
         });
     }
-    
-    #endif
 }
 
 - (void)removeObjectAndExecuteBlocksForKey:(NSString *)key

@@ -13,7 +13,8 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (instancetype)initWithName:(NSString *)name
 {
-    return [self initWithName:name rootPath:[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]];
+    return [self initWithName:name
+                     rootPath:[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject]];
 }
 
 - (instancetype)initWithName:(NSString *)name rootPath:(NSString *)rootPath

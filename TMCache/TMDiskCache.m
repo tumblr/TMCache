@@ -1,16 +1,19 @@
 #import "TMDiskCache.h"
 
-#define TMDiskCacheError(error) if (error) { NSLog(@"%@ (%d) ERROR: %@", \
-                                    [[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
-                                    __LINE__, [error localizedDescription]); }
+#define TMDiskCacheError(error) \
+        if (error) { \
+            NSLog(@"%@ (%d) ERROR: %@", \
+            [[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
+                                            __LINE__, [error localizedDescription]); \
+        }
 
 #define TMCacheStartBackgroundTask() \
-    UIBackgroundTaskIdentifier taskID = UIBackgroundTaskInvalid; \
-    taskID = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{ \
-        [[UIApplication sharedApplication] endBackgroundTask:taskID]; \
-    }];
+        UIBackgroundTaskIdentifier taskID = UIBackgroundTaskInvalid; \
+        taskID = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{ \
+            [[UIApplication sharedApplication] endBackgroundTask:taskID]; \
+        }];
 #define TMCacheEndBackgroundTask() \
-    [[UIApplication sharedApplication] endBackgroundTask:taskID];
+        [[UIApplication sharedApplication] endBackgroundTask:taskID];
 
 static NSString * const TMDiskCachePrefix = @"com.tumblr.TMDiskCache";
 static NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";

@@ -3,11 +3,7 @@
 NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
 @interface TMMemoryCache ()
-#if OS_OBJECT_USE_OBJC
 @property (strong, nonatomic) dispatch_queue_t queue;
-#else
-@property (assign, nonatomic) dispatch_queue_t queue;
-#endif
 @property (strong, nonatomic) NSMutableDictionary *dictionary;
 @property (strong, nonatomic) NSMutableDictionary *dates;
 @property (strong, nonatomic) NSMutableDictionary *costs;
@@ -32,11 +28,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(_queue);
-    _queue = nil;
-    #endif
 }
 
 - (id)init
@@ -475,10 +466,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
     return objectForKey;
 }
 
@@ -499,10 +486,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)removeObjectForKey:(NSString *)key
@@ -517,10 +500,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToDate:(NSDate *)date
@@ -540,10 +519,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToCost:(NSUInteger)cost
@@ -555,10 +530,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToCostByDate:(NSUInteger)cost
@@ -570,10 +541,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)removeAllObjects
@@ -585,10 +552,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)enumerateObjectsWithBlock:(TMMemoryCacheObjectBlock)block
@@ -603,10 +566,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 #pragma mark - Public Thread Safe Accessors -

@@ -4,24 +4,12 @@ NSString * const TMCachePrefix = @"com.tumblr.TMCache";
 NSString * const TMCacheSharedName = @"TMCacheShared";
 
 @interface TMCache ()
-#if OS_OBJECT_USE_OBJC
 @property (strong, nonatomic) dispatch_queue_t queue;
-#else
-@property (assign, nonatomic) dispatch_queue_t queue;
-#endif
 @end
 
 @implementation TMCache
 
 #pragma mark - Initialization -
-
-#if !OS_OBJECT_USE_OBJC
-- (void)dealloc
-{
-    dispatch_release(_queue);
-    _queue = nil;
-}
-#endif
 
 - (instancetype)initWithName:(NSString *)name
 {
@@ -151,10 +139,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
             if (strongSelf)
                 block(strongSelf, key, object);
         });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
     }
 }
 
@@ -191,10 +175,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
             if (strongSelf)
                 block(strongSelf, key, nil);
         });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
     }
 }
 
@@ -228,10 +208,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
             if (strongSelf)
                 block(strongSelf);
         });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
     }
 }
 
@@ -268,10 +244,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
             if (strongSelf)
                 block(strongSelf);
         });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
     }
 }
 
@@ -306,10 +278,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
     return objectForKey;
 }
 
@@ -325,10 +293,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)removeObjectForKey:(NSString *)key
@@ -343,10 +307,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToDate:(NSDate *)date
@@ -361,10 +321,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)removeAllObjects
@@ -376,10 +332,6 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 @end

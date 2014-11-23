@@ -694,10 +694,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
     return objectForKey;
 }
 
@@ -717,10 +713,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
     return fileURLForKey;
 }
 
@@ -736,10 +728,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)removeObjectForKey:(NSString *)key
@@ -754,10 +742,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToSize:(NSUInteger)byteCount
@@ -769,10 +753,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToDate:(NSDate *)date
@@ -792,10 +772,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)trimToSizeByDate:(NSUInteger)byteCount
@@ -807,10 +783,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)removeAllObjects
@@ -822,10 +794,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 - (void)enumerateObjectsWithBlock:(TMDiskCacheObjectBlock)block
@@ -840,10 +808,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
 }
 
 #pragma mark - Public Thread Safe Accessors -

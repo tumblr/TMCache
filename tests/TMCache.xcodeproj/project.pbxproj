@@ -13,7 +13,6 @@
 		D07F1EC2171AFB7A001DBA02 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D07F1EC1171AFB7A001DBA02 /* main.m */; };
 		D07F1EC6171AFB7A001DBA02 /* TMAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D07F1EC5171AFB7A001DBA02 /* TMAppDelegate.m */; };
 		D07F1ECC171AFB7A001DBA02 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D07F1ECB171AFB7A001DBA02 /* Default-568h@2x.png */; };
-		D07F1ED4171AFB7A001DBA02 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D07F1ED3171AFB7A001DBA02 /* SenTestingKit.framework */; };
 		D07F1ED5171AFB7A001DBA02 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D07F1EB5171AFB7A001DBA02 /* UIKit.framework */; };
 		D07F1ED6171AFB7A001DBA02 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D07F1EB7171AFB7A001DBA02 /* Foundation.framework */; };
 		D07F1EE1171AFB7A001DBA02 /* TMCacheTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D07F1EE0171AFB7A001DBA02 /* TMCacheTests.m */; };
@@ -48,7 +47,6 @@
 		D07F1EC5171AFB7A001DBA02 /* TMAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TMAppDelegate.m; sourceTree = "<group>"; };
 		D07F1ECB171AFB7A001DBA02 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		D07F1ED2171AFB7A001DBA02 /* TMCacheTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TMCacheTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D07F1ED3171AFB7A001DBA02 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
 		D07F1EDB171AFB7A001DBA02 /* TMCacheTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TMCacheTests-Info.plist"; sourceTree = "<group>"; };
 		D07F1EDF171AFB7A001DBA02 /* TMCacheTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TMCacheTests.h; sourceTree = "<group>"; };
 		D07F1EE0171AFB7A001DBA02 /* TMCacheTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TMCacheTests.m; sourceTree = "<group>"; };
@@ -77,7 +75,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D07F1ED4171AFB7A001DBA02 /* SenTestingKit.framework in Frameworks */,
 				D07F1ED5171AFB7A001DBA02 /* UIKit.framework in Frameworks */,
 				D07F1ED6171AFB7A001DBA02 /* Foundation.framework in Frameworks */,
 			);
@@ -113,7 +110,6 @@
 				D07F1EB5171AFB7A001DBA02 /* UIKit.framework */,
 				D07F1EB7171AFB7A001DBA02 /* Foundation.framework */,
 				D07F1EB9171AFB7A001DBA02 /* CoreGraphics.framework */,
-				D07F1ED3171AFB7A001DBA02 /* SenTestingKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -202,7 +198,7 @@
 			name = TMCacheTests;
 			productName = TMCacheTests;
 			productReference = D07F1ED2171AFB7A001DBA02 /* TMCacheTests.octest */;
-			productType = "com.apple.product-type.bundle.ocunit-test";
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -396,6 +392,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
 					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+					"$(inherited)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "TMCache/TMCache-Prefix.pch";
@@ -403,7 +400,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				VALID_ARCHS = "arm64 armv7 armv7s i386 x86_64";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Debug;
 		};
@@ -414,6 +410,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
 					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+					"$(inherited)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "TMCache/TMCache-Prefix.pch";
@@ -421,7 +418,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				VALID_ARCHS = "arm64 armv7 armv7s i386 x86_64";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Release;
 		};

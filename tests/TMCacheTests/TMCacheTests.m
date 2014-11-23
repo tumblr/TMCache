@@ -18,7 +18,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     
     self.cache = [[TMCache alloc] initWithName:TMCacheTestName];
     
-    STAssertNotNil(self.cache, @"test cache does not exist");
+    XCTAssertNotNil(self.cache, @"test cache does not exist");
 }
 
 - (void)tearDown
@@ -27,7 +27,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     self.cache = nil;
 
-    STAssertNil(self.cache, @"test cache did not deallocate");
+    XCTAssertNil(self.cache, @"test cache did not deallocate");
     
     [super tearDown];
 }
@@ -61,9 +61,9 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
 - (void)testCoreProperties
 {
-    STAssertTrue([self.cache.name isEqualToString:TMCacheTestName], @"wrong name");
-    STAssertNotNil(self.cache.memoryCache, @"memory cache does not exist");
-    STAssertNotNil(self.cache.diskCache, @"disk cache doe not exist");
+    XCTAssertTrue([self.cache.name isEqualToString:TMCacheTestName], @"wrong name");
+    XCTAssertNotNil(self.cache.memoryCache, @"memory cache does not exist");
+    XCTAssertNotNil(self.cache.diskCache, @"disk cache doe not exist");
 }
 
 - (void)testDiskCacheURL
@@ -71,8 +71,8 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     BOOL isDir = NO;
     BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:[self.cache.diskCache.cacheURL path] isDirectory:&isDir];
 
-    STAssertTrue(exists, @"disk cache directory does not exist");
-    STAssertTrue(isDir, @"disk cache url is not a directory");
+    XCTAssertTrue(exists, @"disk cache directory does not exist");
+    XCTAssertTrue(isDir, @"disk cache url is not a directory");
 }
 
 - (void)testObjectSet
@@ -88,7 +88,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
     
-    STAssertNotNil(image, @"object was not set");
+    XCTAssertNotNil(image, @"object was not set");
 }
 
 - (void)testObjectGet
@@ -106,7 +106,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
     
-    STAssertNotNil(image, @"object was not got");
+    XCTAssertNotNil(image, @"object was not got");
 }
 
 - (void)testObjectRemove
@@ -124,7 +124,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     
     id object = [self.cache objectForKey:key];
     
-    STAssertNil(object, @"object was not removed");
+    XCTAssertNil(object, @"object was not removed");
 }
 
 - (void)testMemoryCost
@@ -135,16 +135,16 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     [self.cache.memoryCache setObject:key1 forKey:key1 withCost:1];
     [self.cache.memoryCache setObject:key2 forKey:key2 withCost:2];
     
-    STAssertTrue(self.cache.memoryCache.totalCost == 3, @"memory cache total cost was incorrect");
+    XCTAssertTrue(self.cache.memoryCache.totalCost == 3, @"memory cache total cost was incorrect");
 
     [self.cache.memoryCache trimToCost:1];
 
     id object1 = [self.cache.memoryCache objectForKey:key1];
     id object2 = [self.cache.memoryCache objectForKey:key2];
 
-    STAssertNotNil(object1, @"object did not survive memory cache trim to cost");
-    STAssertNil(object2, @"object was not trimmed despite exceeding cost");
-    STAssertTrue(self.cache.memoryCache.totalCost == 1, @"cache had an unexpected total cost");
+    XCTAssertNotNil(object1, @"object did not survive memory cache trim to cost");
+    XCTAssertNil(object2, @"object was not trimmed despite exceeding cost");
+    XCTAssertTrue(self.cache.memoryCache.totalCost == 1, @"cache had an unexpected total cost");
 }
 
 - (void)testMemoryCostByDate
@@ -160,16 +160,16 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     id object1 = [self.cache.memoryCache objectForKey:key1];
     id object2 = [self.cache.memoryCache objectForKey:key2];
 
-    STAssertNil(object1, @"object was not trimmed despite exceeding cost");
-    STAssertNil(object2, @"object was not trimmed despite exceeding cost");
-    STAssertTrue(self.cache.memoryCache.totalCost == 0, @"cache had an unexpected total cost");
+    XCTAssertNil(object1, @"object was not trimmed despite exceeding cost");
+    XCTAssertNil(object2, @"object was not trimmed despite exceeding cost");
+    XCTAssertTrue(self.cache.memoryCache.totalCost == 0, @"cache had an unexpected total cost");
 }
 
 - (void)testDiskByteCount
 {
     [self.cache setObject:[self image] forKey:@"image"];
     
-    STAssertTrue(self.cache.diskByteCount > 0, @"disk cache byte count was not greater than zero");
+    XCTAssertTrue(self.cache.diskByteCount > 0, @"disk cache byte count was not greater than zero");
 }
 
 - (void)testOneThousandAndOneWrites
@@ -202,7 +202,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     
     dispatch_group_wait(group, [self timeout]);
 
-    STAssertTrue(count == 0, @"one or more object blocks failed to execute, possible queue deadlock");
+    XCTAssertTrue(count == 0, @"one or more object blocks failed to execute, possible queue deadlock");
 }
 
 - (void)testMemoryWarningBlock
@@ -221,7 +221,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
 
-    STAssertTrue(blockDidExecute, @"memory warning block did not execute");
+    XCTAssertTrue(blockDidExecute, @"memory warning block did not execute");
 }
 
 - (void)testBackgroundBlock
@@ -240,7 +240,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
 
-    STAssertTrue(blockDidExecute, @"app background block did not execute");
+    XCTAssertTrue(blockDidExecute, @"app background block did not execute");
 }
 
 - (void)testMemoryWarningProperty
@@ -263,7 +263,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
 
-    STAssertNotNil(object, @"object was removed from the cache");
+    XCTAssertNotNil(object, @"object was removed from the cache");
 }
 
 - (void)testMemoryCacheEnumerationWithWarning
@@ -295,7 +295,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
 
-    STAssertTrue(objectCount == enumCount, @"some objects were not enumerated");
+    XCTAssertTrue(objectCount == enumCount, @"some objects were not enumerated");
 }
 
 - (void)testDiskCacheEnumeration
@@ -323,7 +323,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
 
     dispatch_semaphore_wait(semaphore, [self timeout]);
 
-    STAssertTrue(objectCount == enumCount, @"some objects were not enumerated");
+    XCTAssertTrue(objectCount == enumCount, @"some objects were not enumerated");
 }
 
 @end

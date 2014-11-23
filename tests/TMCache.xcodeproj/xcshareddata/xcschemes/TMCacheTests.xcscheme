@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D07F1ED1171AFB7A001DBA02"
-               BuildableName = "TMCacheTests.octest"
+               BuildableName = "TMCacheTests.xctest"
                BlueprintName = "TMCacheTests"
                ReferencedContainer = "container:TMCache.xcodeproj">
             </BuildableReference>
@@ -47,7 +47,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D07F1ED1171AFB7A001DBA02"
-               BuildableName = "TMCacheTests.octest"
+               BuildableName = "TMCacheTests.xctest"
                BlueprintName = "TMCacheTests"
                ReferencedContainer = "container:TMCache.xcodeproj">
             </BuildableReference>

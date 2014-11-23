@@ -181,8 +181,8 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     dispatch_group_t group = dispatch_group_create();
     
     for (NSUInteger i = 0; i < max; i++) {
-        NSString *key = [[NSString alloc] initWithFormat:@"key %d", i];
-        NSString *obj = [[NSString alloc] initWithFormat:@"obj %d", i];
+        NSString *key = [[NSString alloc] initWithFormat:@"key %lu", (unsigned long)i];
+        NSString *obj = [[NSString alloc] initWithFormat:@"obj %lu", (unsigned long)i];
         
         [self.cache setObject:obj forKey:key block:nil];
 
@@ -190,7 +190,7 @@ static const NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     }
     
     for (NSUInteger i = 0; i < max; i++) {
-        NSString *key = [[NSString alloc] initWithFormat:@"key %d", i];
+        NSString *key = [[NSString alloc] initWithFormat:@"key %lu", (unsigned long)i];
         
         [self.cache objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
             dispatch_async(queue, ^{

@@ -76,45 +76,7 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
         if (!strongSelf)
             return;
 
-        __weak TMCache *weakSelf = strongSelf;
-        
-        [strongSelf->_memoryCache objectForKey:key block:^(TMMemoryCache *cache, NSString *key, id object) {
-            TMCache *strongSelf = weakSelf;
-            if (!strongSelf)
-                return;
-            
-            if (object) {
-                [strongSelf->_diskCache fileURLForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-                    // update the access time on disk
-                }];
-
-                __weak TMCache *weakSelf = strongSelf;
-                
-                dispatch_async(strongSelf->_queue, ^{
-                    TMCache *strongSelf = weakSelf;
-                    if (strongSelf)
-                        block(strongSelf, key, object);
-                });
-            } else {
-                __weak TMCache *weakSelf = strongSelf;
-
-                [strongSelf->_diskCache objectForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-                    TMCache *strongSelf = weakSelf;
-                    if (!strongSelf)
-                        return;
-                    
-                    [strongSelf->_memoryCache setObject:object forKey:key block:nil];
-                    
-                    __weak TMCache *weakSelf = strongSelf;
-                    
-                    dispatch_async(strongSelf->_queue, ^{
-                        TMCache *strongSelf = weakSelf;
-                        if (strongSelf)
-                            block(strongSelf, key, object);
-                    });
-                }];
-            }
-        }];
+        block(strongSelf, key, [strongSelf objectForKey:key]);
     });
 }
 
@@ -295,22 +257,26 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     if (!key)
         return nil;
     
-    __block id objectForKey = nil;
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
-        objectForKey = object;
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
-    return objectForKey;
+    id object = [_memoryCache objectForKey:key];
+    
+    if (object) {
+        __weak TMCache *weakSelf = self;
+        dispatch_barrier_async(_queue, ^{
+            TMCache *strongSelf = weakSelf;
+            if (strongSelf)
+                [strongSelf->_diskCache fileURLForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
+                    // update the access time on disk
+                }];
+        });
+    } else {
+        object = [_diskCache objectForKey:key];
+        
+        if (object) {
+            [_memoryCache setObject:object forKey:key block:nil];
+        }
+    };
+    
+    return object;
 }
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key

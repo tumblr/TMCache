@@ -397,8 +397,6 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 - (void)objectForKey:(NSString *)key block:(TMDiskCacheObjectBlock)block
 {
-    NSDate *now = [[NSDate alloc] init];
-
     if (!key || !block)
         return;
 
@@ -410,14 +408,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
             return;
 
         NSURL *fileURL = [strongSelf encodedFileURLForKey:key];
-        id <NSCoding> object = nil;
-
-        if ([[NSFileManager defaultManager] fileExistsAtPath:[fileURL path]]) {
-            object = [NSKeyedUnarchiver unarchiveObjectWithFile:[fileURL path]];
-            [strongSelf setFileModificationDate:now forURL:fileURL];
-        }
-
-        block(strongSelf, key, object, fileURL);
+        block(strongSelf, key, [strongSelf objectForKey:key], fileURL);
     });
 }
 
@@ -682,23 +673,22 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 {
     if (!key)
         return nil;
-
-    __block id <NSCoding> objectForKey = nil;
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self objectForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-        objectForKey = object;
-        dispatch_semaphore_signal(semaphore);
-    }];
     
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
-    return objectForKey;
+    NSURL *fileURL = [self encodedFileURLForKey:key];
+    
+    // No need to check if file exists, as unarchiveObjectWithFile returns nil if there is no file at path
+    id <NSCoding> object = [NSKeyedUnarchiver unarchiveObjectWithFile:[fileURL path]];
+    
+    if (object) {
+        __weak TMDiskCache *weakSelf = self;
+        dispatch_barrier_async(_queue, ^{
+            TMDiskCache *strongSelf = weakSelf;
+            if (strongSelf)
+                [strongSelf setFileModificationDate:[NSDate new] forURL:fileURL];
+        });
+    }
+    
+    return object;
 }
 
 - (NSURL *)fileURLForKey:(NSString *)key

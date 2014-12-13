@@ -225,8 +225,6 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
 - (void)objectForKey:(NSString *)key block:(TMMemoryCacheObjectBlock)block
 {
-    NSDate *now = [[NSDate alloc] init];
-    
     if (!key || !block)
         return;
 
@@ -237,18 +235,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
         if (!strongSelf)
             return;
 
-        id object = [strongSelf->_dictionary objectForKey:key];
-
-        if (object) {
-            __weak TMMemoryCache *weakSelf = strongSelf;
-            dispatch_barrier_async(strongSelf->_queue, ^{
-                TMMemoryCache *strongSelf = weakSelf;
-                if (strongSelf)
-                    [strongSelf->_dates setObject:now forKey:key];
-            });
-        }
-
-        block(strongSelf, key, object);
+        block(strongSelf, key, [strongSelf objectForKey:key]);
     });
 }
 
@@ -463,23 +450,19 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 {
     if (!key)
         return nil;
-
-    __block id objectForKey = nil;
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self objectForKey:key block:^(TMMemoryCache *cache, NSString *key, id object) {
-        objectForKey = object;
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
-    return objectForKey;
+    
+    id object = [_dictionary objectForKey:key];
+    
+    if (object) {
+        __weak TMMemoryCache *weakSelf = self;
+        dispatch_barrier_async(_queue, ^{
+            TMMemoryCache *strongSelf = weakSelf;
+            if (strongSelf)
+                [strongSelf->_dates setObject:[NSDate new] forKey:key];
+        });
+    }
+    
+    return object;
 }
 
 - (void)setObject:(id)object forKey:(NSString *)key

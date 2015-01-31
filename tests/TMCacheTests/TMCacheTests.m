@@ -127,6 +127,62 @@ NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     STAssertNil(object, @"object was not removed");
 }
 
+- (void)testObjectExpiryTime
+{
+    NSString *key1 = @"key1";
+    NSString *key2 = @"key2";
+    
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    dispatch_queue_t queue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+    //Timer has a loop of 1.1 seconds, just to give some time to clear objects from cache
+    dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, (int64_t)(1.1 * NSEC_PER_SEC), 0);
+    //dispatch_source_set_event_handler is called very first time which will update timerFiredCount to 0
+    __block int timerFiredCount = -1;
+    
+    dispatch_source_set_event_handler(timer, ^{
+        
+        timerFiredCount++;
+        
+//        For debugging purpose
+//        NSString *object1 = [self.cache.memoryCache objectForKey:key1];
+//        NSString *object2 = [self.cache.memoryCache objectForKey:key2];
+//        NSString* log = [NSString stringWithFormat:@"\n\n  [%d]  %f object 1 : %@, object 2 : %@  [%lu]\n\n", timerFiredCount, [[NSDate date] timeIntervalSinceReferenceDate], object1, object2, (unsigned long)self.cache.memoryCache.totalCost];
+//        CFShow((__bridge CFTypeRef)(log)); // NSLog output is not clean
+        
+        switch (timerFiredCount) {
+            case 0:
+                STAssertTrue(self.cache.memoryCache.totalCost == 3, @"cache had an unexpected total cost before any object expired");
+                break;
+            case 1:
+                STAssertTrue(self.cache.memoryCache.totalCost == 2, @"cache had an unexpected total cost after first object expired");
+                break;
+            case 2:
+                break;
+            case 3:
+                STAssertTrue(self.cache.memoryCache.totalCost == 0, @"cache had an unexpected total cost after all objects expired");
+                dispatch_semaphore_signal(semaphore);
+                break;
+            default:
+                break;
+        }
+        
+    });
+    
+    [self.cache.memoryCache setObject:key1 forKey:key1 withCost:1 andLife:1];
+    [self.cache.memoryCache setObject:key2 forKey:key2 withCost:2 andLife:2];
+    
+    if(timer != nil) {
+        dispatch_resume(timer);
+    }
+
+    dispatch_semaphore_wait(semaphore, [self timeout]);
+    
+    if(timer) {
+        dispatch_source_cancel(timer);
+    }
+}
+
 - (void)testMemoryCost
 {
     NSString *key1 = @"key1";
@@ -181,8 +237,8 @@ NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     dispatch_group_t group = dispatch_group_create();
     
     for (NSUInteger i = 0; i < max; i++) {
-        NSString *key = [[NSString alloc] initWithFormat:@"key %d", i];
-        NSString *obj = [[NSString alloc] initWithFormat:@"obj %d", i];
+        NSString *key = [[NSString alloc] initWithFormat:@"key %ld", i];
+        NSString *obj = [[NSString alloc] initWithFormat:@"obj %ld", i];
         
         [self.cache setObject:obj forKey:key block:nil];
 
@@ -190,7 +246,7 @@ NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     }
     
     for (NSUInteger i = 0; i < max; i++) {
-        NSString *key = [[NSString alloc] initWithFormat:@"key %d", i];
+        NSString *key = [[NSString alloc] initWithFormat:@"key %ld", i];
         
         [self.cache objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
             dispatch_async(queue, ^{

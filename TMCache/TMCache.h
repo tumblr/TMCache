@@ -36,7 +36,7 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
 /**
  A concurrent queue on which blocks passed to the asynchronous access methods are run.
  */
-@property (readonly) dispatch_queue_t queue;
+@property (readonly) dispatch_queue_t asyncQueue;
 
 /**
  Synchronously retrieves the total byte count of the <diskCache> on the shared disk queue.

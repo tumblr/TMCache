@@ -5,9 +5,9 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 @interface TMCache ()
 #if OS_OBJECT_USE_OBJC
-@property (strong, nonatomic) dispatch_queue_t queue;
+@property (strong, nonatomic) dispatch_queue_t asyncQueue;
 #else
-@property (assign, nonatomic) dispatch_queue_t queue;
+@property (assign, nonatomic) dispatch_queue_t asyncQueue;
 #endif
 @end
 
@@ -18,8 +18,8 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 #if !OS_OBJECT_USE_OBJC
 - (void)dealloc
 {
-    dispatch_release(_queue);
-    _queue = nil;
+    dispatch_release(_asyncQueue);
+    _asyncQueue = nil;
 }
 #endif
 
@@ -32,13 +32,13 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 {
     if (!name)
         return nil;
-
+    
     if (self = [super init]) {
         _name = [name copy];
         
         NSString *queueName = [[NSString alloc] initWithFormat:@"%@.%p", TMCachePrefix, self];
-        _queue = dispatch_queue_create([queueName UTF8String], DISPATCH_QUEUE_CONCURRENT);
-
+        _asyncQueue = dispatch_queue_create([[NSString stringWithFormat:@"%@ Asynchronous Queue", queueName] UTF8String], DISPATCH_QUEUE_CONCURRENT);
+        
         _diskCache = [[TMDiskCache alloc] initWithName:_name rootPath:rootPath];
         _memoryCache = [[TMMemoryCache alloc] init];
     }
@@ -54,11 +54,11 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 {
     static id cache;
     static dispatch_once_t predicate;
-
+    
     dispatch_once(&predicate, ^{
         cache = [[self alloc] initWithName:TMCacheSharedName];
     });
-
+    
     return cache;
 }
 
@@ -68,53 +68,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 {
     if (!key || !block)
         return;
-
+    
     __weak TMCache *weakSelf = self;
-
-    dispatch_async(_queue, ^{
+    dispatch_async(_asyncQueue, ^{
         TMCache *strongSelf = weakSelf;
-        if (!strongSelf)
-            return;
-
-        __weak TMCache *weakSelf = strongSelf;
+        id object = [strongSelf objectForKey:key];
         
-        [strongSelf->_memoryCache objectForKey:key block:^(TMMemoryCache *cache, NSString *key, id object) {
-            TMCache *strongSelf = weakSelf;
-            if (!strongSelf)
-                return;
-            
-            if (object) {
-                [strongSelf->_diskCache fileURLForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-                    // update the access time on disk
-                }];
-
-                __weak TMCache *weakSelf = strongSelf;
-                
-                dispatch_async(strongSelf->_queue, ^{
-                    TMCache *strongSelf = weakSelf;
-                    if (strongSelf)
-                        block(strongSelf, key, object);
-                });
-            } else {
-                __weak TMCache *weakSelf = strongSelf;
-
-                [strongSelf->_diskCache objectForKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-                    TMCache *strongSelf = weakSelf;
-                    if (!strongSelf)
-                        return;
-                    
-                    [strongSelf->_memoryCache setObject:object forKey:key block:nil];
-                    
-                    __weak TMCache *weakSelf = strongSelf;
-                    
-                    dispatch_async(strongSelf->_queue, ^{
-                        TMCache *strongSelf = weakSelf;
-                        if (strongSelf)
-                            block(strongSelf, key, object);
-                    });
-                }];
-            }
-        }];
+        if (block)
+            block(strongSelf, key, object);
     });
 }
 
@@ -122,40 +83,15 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 {
     if (!key || !object)
         return;
-
-    dispatch_group_t group = nil;
-    TMMemoryCacheObjectBlock memBlock = nil;
-    TMDiskCacheObjectBlock diskBlock = nil;
     
-    if (block) {
-        group = dispatch_group_create();
-        dispatch_group_enter(group);
-        dispatch_group_enter(group);
+    __weak TMCache *weakSelf = self;
+    dispatch_async(_asyncQueue, ^{
+        TMCache *strongSelf = weakSelf;
+        [strongSelf setObject:object forKey:key];
         
-        memBlock = ^(TMMemoryCache *cache, NSString *key, id object) {
-            dispatch_group_leave(group);
-        };
-        
-        diskBlock = ^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-            dispatch_group_leave(group);
-        };
-    }
-    
-    [_memoryCache setObject:object forKey:key block:memBlock];
-    [_diskCache setObject:object forKey:key block:diskBlock];
-    
-    if (group) {
-        __weak TMCache *weakSelf = self;
-        dispatch_group_notify(group, _queue, ^{
-            TMCache *strongSelf = weakSelf;
-            if (strongSelf)
-                block(strongSelf, key, object);
-        });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
-    }
+        if (block)
+            block(strongSelf, key, object);
+    });
 }
 
 - (void)removeObjectForKey:(NSString *)key block:(TMCacheObjectBlock)block
@@ -163,76 +99,26 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     if (!key)
         return;
     
-    dispatch_group_t group = nil;
-    TMMemoryCacheObjectBlock memBlock = nil;
-    TMDiskCacheObjectBlock diskBlock = nil;
-    
-    if (block) {
-        group = dispatch_group_create();
-        dispatch_group_enter(group);
-        dispatch_group_enter(group);
+    __weak TMCache *weakSelf = self;
+    dispatch_async(_asyncQueue, ^{
+        TMCache *strongSelf = weakSelf;
+        [strongSelf removeObjectForKey:key];
         
-        memBlock = ^(TMMemoryCache *cache, NSString *key, id object) {
-            dispatch_group_leave(group);
-        };
-        
-        diskBlock = ^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
-            dispatch_group_leave(group);
-        };
-    }
-
-    [_memoryCache removeObjectForKey:key block:memBlock];
-    [_diskCache removeObjectForKey:key block:diskBlock];
-    
-    if (group) {
-        __weak TMCache *weakSelf = self;
-        dispatch_group_notify(group, _queue, ^{
-            TMCache *strongSelf = weakSelf;
-            if (strongSelf)
-                block(strongSelf, key, nil);
-        });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
-    }
+        if (block)
+            block(strongSelf, key, nil);
+    });
 }
 
 - (void)removeAllObjects:(TMCacheBlock)block
 {
-    dispatch_group_t group = nil;
-    TMMemoryCacheBlock memBlock = nil;
-    TMDiskCacheBlock diskBlock = nil;
-    
-    if (block) {
-        group = dispatch_group_create();
-        dispatch_group_enter(group);
-        dispatch_group_enter(group);
+    __weak TMCache *weakSelf = self;
+    dispatch_async(_asyncQueue, ^{
+        TMCache *strongSelf = weakSelf;
+        [strongSelf removeAllObjects];
         
-        memBlock = ^(TMMemoryCache *cache) {
-            dispatch_group_leave(group);
-        };
-        
-        diskBlock = ^(TMDiskCache *cache) {
-            dispatch_group_leave(group);
-        };
-    }
-    
-    [_memoryCache removeAllObjects:memBlock];
-    [_diskCache removeAllObjects:diskBlock];
-    
-    if (group) {
-        __weak TMCache *weakSelf = self;
-        dispatch_group_notify(group, _queue, ^{
-            TMCache *strongSelf = weakSelf;
-            if (strongSelf)
-                block(strongSelf);
-        });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
-    }
+        if (block)
+            block(strongSelf);
+    });
 }
 
 - (void)trimToDate:(NSDate *)date block:(TMCacheBlock)block
@@ -240,39 +126,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     if (!date)
         return;
 
-    dispatch_group_t group = nil;
-    TMMemoryCacheBlock memBlock = nil;
-    TMDiskCacheBlock diskBlock = nil;
-    
-    if (block) {
-        group = dispatch_group_create();
-        dispatch_group_enter(group);
-        dispatch_group_enter(group);
+    __weak TMCache *weakSelf = self;
+    dispatch_async(_asyncQueue, ^{
+        TMCache *strongSelf = weakSelf;
+        [strongSelf trimToDate:date];
         
-        memBlock = ^(TMMemoryCache *cache) {
-            dispatch_group_leave(group);
-        };
-        
-        diskBlock = ^(TMDiskCache *cache) {
-            dispatch_group_leave(group);
-        };
-    }
-    
-    [_memoryCache trimToDate:date block:memBlock];
-    [_diskCache trimToDate:date block:diskBlock];
-    
-    if (group) {
-        __weak TMCache *weakSelf = self;
-        dispatch_group_notify(group, _queue, ^{
-            TMCache *strongSelf = weakSelf;
-            if (strongSelf)
-                block(strongSelf);
-        });
-        
-        #if !OS_OBJECT_USE_OBJC
-        dispatch_release(group);
-        #endif
-    }
+        if (block)
+            block(strongSelf);
+    });
 }
 
 #pragma mark - Public Synchronous Accessors -
@@ -295,40 +156,29 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     if (!key)
         return nil;
     
-    __block id objectForKey = nil;
+    id object = nil;
 
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
-        objectForKey = object;
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
-
-    return objectForKey;
+    object = [self->_memoryCache objectForKey:key];
+    
+    if (object) {
+        // update the access time on disk
+        [self->_diskCache fileURLForKey:key];
+    } else {
+        object = [self->_diskCache objectForKey:key];
+        
+        [self->_memoryCache setObject:object forKey:key];
+    }
+    
+    return object;
 }
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
 {
-    if (!object || !key)
+    if (!key || !object)
         return;
     
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self setObject:object forKey:key block:^(TMCache *cache, NSString *key, id object) {
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
+    [_memoryCache setObject:object forKey:key];
+    [_diskCache setObject:object forKey:key];
 }
 
 - (void)removeObjectForKey:(NSString *)key
@@ -336,17 +186,8 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     if (!key)
         return;
     
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self removeObjectForKey:key block:^(TMCache *cache, NSString *key, id object) {
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
+    [_memoryCache removeObjectForKey:key];
+    [_diskCache removeObjectForKey:key];
 }
 
 - (void)trimToDate:(NSDate *)date
@@ -354,32 +195,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
     if (!date)
         return;
     
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self trimToDate:date block:^(TMCache *cache) {
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
+    [_memoryCache trimToDate:date];
+    [_diskCache trimToDate:date];
 }
 
 - (void)removeAllObjects
 {
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self removeAllObjects:^(TMCache *cache) {
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
+    [_memoryCache removeAllObjects];
+    [_diskCache removeAllObjects];
 }
 
 @end

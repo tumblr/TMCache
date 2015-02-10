@@ -127,6 +127,41 @@ NSTimeInterval TMCacheTestBlockTimeout = 5.0;
     STAssertNil(object, @"object was not removed");
 }
 
+
+- (void)testMainCacheObjectExpiryTime
+{
+    NSString *key = @"testMainCacheObjectExpiryTime";
+    
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    dispatch_queue_t queue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    
+    [self.cache objectForKey:key
+                       block:^(TMCache *cache, NSString *key, id object) {
+                           STAssertNil(object, @"The object for key is already present, before even setting it");
+                           [self.cache setObject:[self image] forKey:key andLife:1];
+                       }];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.9 * NSEC_PER_SEC)), queue, ^{
+        
+        [self.cache objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
+            STAssertNotNil(object, @"The object is killed before its life will expired");
+        }];
+        
+    });
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), queue, ^{
+        
+        [self.cache objectForKey:key block:^(TMCache *cache, NSString *key, id object) {
+            STAssertNil(object, @"The object is NOT killed even after its life expired");
+            dispatch_semaphore_signal(semaphore);
+        }];
+        
+        
+    });
+    
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+}
+
 - (void)testObjectExpiryTime
 {
     NSString *key1 = @"key1";

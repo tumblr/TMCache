@@ -199,6 +199,18 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMDiskCacheObjectBlock)block;
 
 /**
+ Stores an object in the cache for the specified key. This method returns immediately and executes the
+ passed block as soon as the object has been stored. The object will be removed from cache after it's 
+ life (in seconds) is expired.
+ 
+ @param object An object to store in the cache.
+ @param key A key to associate with the object. This string will be copied.
+ @param life Expected interval (in seconds) for which the object should live in cache.
+ @param block A block to be executed serially after the object has been stored, or nil.
+ */
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life block:(TMDiskCacheObjectBlock)block;
+
+/**
  Removes the object for the specified key. This method returns immediately and executes the passed block
  as soon as the object has been removed.
  
@@ -286,6 +298,17 @@ typedef void (^TMDiskCacheObjectBlock)(TMDiskCache *cache, NSString *key, id <NS
  @param key A key to associate with the object. This string will be copied.
  */
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key;
+
+/**
+ Stores an object in the cache for the specified key. This method blocks the calling thread until
+ the object has been stored. The object will be removed from cache after it's life (in seconds) is expired.
+ 
+ @see setObject:forKey:block:
+ @param object An object to store in the cache.
+ @param key A key to associate with the object. This string will be copied.
+ @param life Expected interval (in seconds) for which the object should live in cache.
+ */
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life;
 
 /**
  Removes the object for the specified key. This method blocks the calling thread until the object

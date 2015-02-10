@@ -120,6 +120,11 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMCacheObjectBlock)block
 {
+    [self setObject:object forKey:key andLife:0 block:block];
+}
+
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life block:(TMCacheObjectBlock)block
+{
     if (!key || !object)
         return;
 
@@ -141,8 +146,8 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
         };
     }
     
-    [_memoryCache setObject:object forKey:key block:memBlock];
-    [_diskCache setObject:object forKey:key block:diskBlock];
+    [_memoryCache setObject:object forKey:key withCost:0 andLife:life block:memBlock];
+    [_diskCache setObject:object forKey:key andLife:life block:diskBlock];
     
     if (group) {
         __weak TMCache *weakSelf = self;
@@ -315,17 +320,22 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
 {
+    [self setObject:object forKey:key andLife:0];
+}
+
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life
+{
     if (!object || !key)
         return;
     
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self setObject:object forKey:key block:^(TMCache *cache, NSString *key, id object) {
+    
+    [self setObject:object forKey:key andLife:life block:^(TMCache *cache, NSString *key, id object) {
         dispatch_semaphore_signal(semaphore);
     }];
-
+    
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
+    
     #if !OS_OBJECT_USE_OBJC
     dispatch_release(semaphore);
     #endif

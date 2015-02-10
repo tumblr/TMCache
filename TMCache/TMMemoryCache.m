@@ -555,20 +555,7 @@ static NSTimeInterval const kExpiryCheckInterval = 1.0;
 
 - (void)setObject:(id)object forKey:(NSString *)key withCost:(NSUInteger)cost
 {
-    if (!object || !key)
-        return;
-
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self setObject:object forKey:key withCost:cost block:^(TMMemoryCache *cache, NSString *key, id object) {
-        dispatch_semaphore_signal(semaphore);
-    }];
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-
-    #if !OS_OBJECT_USE_OBJC
-    dispatch_release(semaphore);
-    #endif
+    [self setObject:object forKey:key withCost:cost andLife:0];
 }
 
 - (void)setObject:(id)object forKey:(NSString *)key withCost:(NSUInteger)cost andLife:(NSUInteger)life

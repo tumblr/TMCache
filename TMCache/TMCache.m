@@ -66,8 +66,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)objectForKey:(NSString *)key block:(TMCacheObjectBlock)block
 {
-    if (!key || !block)
+    if (!key || !block) {
+        if (block) {
+            dispatch_async(_queue, ^{
+                block(self, key, nil);
+            });
+        }
         return;
+    }
 
     __weak TMCache *weakSelf = self;
 
@@ -120,8 +126,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMCacheObjectBlock)block
 {
-    if (!key || !object)
+    if (!key || !object) {
+        if (block) {
+            dispatch_async(_queue, ^{
+                block(self, key, nil);
+            });
+        }
         return;
+    }
 
     dispatch_group_t group = nil;
     TMMemoryCacheObjectBlock memBlock = nil;
@@ -160,8 +172,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)removeObjectForKey:(NSString *)key block:(TMCacheObjectBlock)block
 {
-    if (!key)
+    if (!key) {
+        if (block) {
+            dispatch_async(_queue, ^{
+                block(self, key, nil);
+            });
+        }
         return;
+    }
     
     dispatch_group_t group = nil;
     TMMemoryCacheObjectBlock memBlock = nil;
@@ -237,8 +255,14 @@ NSString * const TMCacheSharedName = @"TMCacheShared";
 
 - (void)trimToDate:(NSDate *)date block:(TMCacheBlock)block
 {
-    if (!date)
+    if (!date) {
+        if (block) {
+            dispatch_async(_queue, ^{
+                block(self);
+            });
+        }
         return;
+    }
 
     dispatch_group_t group = nil;
     TMMemoryCacheBlock memBlock = nil;

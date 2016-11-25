@@ -14,11 +14,15 @@ static id <TMCacheBackgroundTaskManager> TMCacheBackgroundTaskManager;
 NSString * const TMDiskCachePrefix = @"com.tumblr.TMDiskCache";
 NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
+//interval to check object life span, we can reduce it for more accuracy, but it might take toll on performance
+static NSTimeInterval const kExpiryCheckInterval = 1.0;
+
 @interface TMDiskCache ()
 @property (assign) NSUInteger byteCount;
 @property (strong, nonatomic) NSURL *cacheURL;
 @property (assign, nonatomic) dispatch_queue_t queue;
 @property (strong, nonatomic) NSMutableDictionary *dates;
+@property (strong, nonatomic) NSMutableDictionary *expiryDates;
 @property (strong, nonatomic) NSMutableDictionary *sizes;
 @end
 
@@ -62,6 +66,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
         _dates = [[NSMutableDictionary alloc] init];
         _sizes = [[NSMutableDictionary alloc] init];
+        _expiryDates = [[NSMutableDictionary alloc] init];
 
         NSString *pathComponent = [[NSString alloc] initWithFormat:@"%@.%@", TMDiskCachePrefix, _name];
         _cacheURL = [NSURL fileURLWithPathComponents:@[ rootPath, pathComponent ]];
@@ -317,11 +322,30 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
     [_sizes removeObjectForKey:key];
     [_dates removeObjectForKey:key];
+    [_expiryDates removeObjectForKey:key];
 
     if (_didRemoveObjectBlock)
         _didRemoveObjectBlock(self, key, nil, fileURL);
 
     return YES;
+}
+
+- (void)trimExpiredObjects
+{
+    NSArray *keysSortedByExpiryDate = [_expiryDates keysSortedByValueUsingSelector:@selector(compare:)];
+    NSDate *now = [NSDate date];
+    for (NSString *key in keysSortedByExpiryDate) { // oldest objects first
+        NSDate *expiryDate = [_expiryDates objectForKey:key];
+        if (!expiryDate)
+            continue;
+        
+        if ([expiryDate compare:now] == NSOrderedAscending) { // expired
+            [self removeFileAndExecuteBlocksForKey:key];
+        } else {
+            break;
+        }
+    }
+
 }
 
 - (void)trimDiskToSize:(NSUInteger)trimByteCount
@@ -385,6 +409,42 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     dispatch_after(time, _queue, ^(void) {
         TMDiskCache *strongSelf = weakSelf;
         [strongSelf trimToAgeLimitRecursively];
+    });
+}
+
+- (void)trimExpiredObjectsRecursively
+{
+    if (_expiryDates.allKeys.count == 0)
+        return; // no object has an expiry date
+    
+    TMCacheStartBackgroundTask();
+    
+    __weak TMDiskCache *weakSelf = self;
+    
+    dispatch_async(_queue, ^{
+        TMDiskCache *strongSelf = weakSelf;
+        if (!strongSelf) {
+            TMCacheEndBackgroundTask();
+            return;
+        }
+        
+        [strongSelf trimExpiredObjects];
+        
+        TMCacheEndBackgroundTask();
+    });
+    
+    dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kExpiryCheckInterval * NSEC_PER_SEC));
+    dispatch_after(time, _queue, ^(void){
+        TMDiskCache *strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        
+        __weak TMDiskCache *weakSelf = strongSelf;
+        
+        dispatch_barrier_async(strongSelf->_queue, ^{
+            TMDiskCache *strongSelf = weakSelf;
+            [strongSelf trimExpiredObjectsRecursively];
+        });
     });
 }
 
@@ -452,6 +512,11 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMDiskCacheObjectBlock)block
 {
+    [self setObject:object forKey:key andLife:0 block:block];
+}
+
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life block:(TMDiskCacheObjectBlock)block
+{
     NSDate *now = [[NSDate alloc] init];
 
     if (!key || !object)
@@ -496,6 +561,15 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
             
             if (strongSelf->_byteLimit > 0 && strongSelf->_byteCount > strongSelf->_byteLimit)
                 [strongSelf trimToSizeByDate:strongSelf->_byteLimit block:nil];
+            
+            if (life > 0) {
+                NSDate *expiryDate = [[NSDate alloc] initWithTimeIntervalSinceNow:life];
+                [strongSelf->_expiryDates setObject:expiryDate forKey:key];
+                if (_expiryDates.allKeys.count == 1) { //this is the first key with expiry date
+                    [strongSelf trimExpiredObjectsRecursively];
+                }
+            }
+            
         } else {
             fileURL = nil;
         }
@@ -644,6 +718,8 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
         [strongSelf->_dates removeAllObjects];
         [strongSelf->_sizes removeAllObjects];
         strongSelf.byteCount = 0; // atomic
+        
+        [strongSelf->_expiryDates removeAllObjects];
 
         if (strongSelf->_didRemoveAllObjectsBlock)
             strongSelf->_didRemoveAllObjectsBlock(strongSelf);
@@ -735,12 +811,17 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key
 {
+    [self setObject:object forKey:key andLife:0];
+}
+
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life
+{
     if (!object || !key)
         return;
     
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-    [self setObject:object forKey:key block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
+    
+    [self setObject:object forKey:key andLife:life block:^(TMDiskCache *cache, NSString *key, id <NSCoding> object, NSURL *fileURL) {
         dispatch_semaphore_signal(semaphore);
     }];
 

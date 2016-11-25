@@ -107,6 +107,18 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key block:(TMCacheObjectBlock)block;
 
 /**
+ Stores an object in the cache for the specified key. This method returns immediately and executes the
+ passed block after the object has been stored, potentially in parallel with other blocks on the <queue>. 
+ The object will be removed from cache after it's life (in seconds) is expired.
+ 
+ @param object An object to store in the cache.
+ @param key A key to associate with the object. This string will be copied.
+ @param life Expected interval (in seconds) for which the object should live in cache.
+ @param block A block to be executed concurrently after the object has been stored, or nil.
+ */
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life block:(TMCacheObjectBlock)block;
+
+/**
  Removes the object for the specified key. This method returns immediately and executes the passed
  block after the object has been removed, potentially in parallel with other blocks on the <queue>.
  
@@ -152,6 +164,17 @@ typedef void (^TMCacheObjectBlock)(TMCache *cache, NSString *key, id object);
  @param key A key to associate with the object. This string will be copied.
  */
 - (void)setObject:(id <NSCoding>)object forKey:(NSString *)key;
+
+/**
+ Stores an object in the cache for the specified key. This method blocks the calling thread until the
+ object has been set. The object will be removed from cache after it's life (in seconds) is expired.
+ 
+ @see setObject:forKey:block:
+ @param object An object to store in the cache.
+ @param key A key to associate with the object. This string will be copied.
+ @param life Expected interval (in seconds) for which the object should live in cache.
+ */
+- (void)setObject:(id <NSCoding>)object forKey:(NSString *)key andLife:(NSUInteger)life;
 
 /**
  Removes the object for the specified key. This method blocks the calling thread until the object

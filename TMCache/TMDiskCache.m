@@ -193,11 +193,16 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     if (![[NSFileManager defaultManager] fileExistsAtPath:[itemURL path]])
         return NO;
 
-    NSError *error = nil;
     NSString *uniqueString = [[NSProcessInfo processInfo] globallyUniqueString];
     NSURL *uniqueTrashURL = [[TMDiskCache sharedTrashURL] URLByAppendingPathComponent:uniqueString];
-    BOOL moved = [[NSFileManager defaultManager] moveItemAtURL:itemURL toURL:uniqueTrashURL error:&error];
-    TMDiskCacheError(error);
+    __block BOOL moved = NO;
+
+    dispatch_sync([self sharedTrashQueue], ^{
+        NSError *error = nil;
+        moved = [[NSFileManager defaultManager] moveItemAtURL:itemURL toURL:uniqueTrashURL error:&error];
+        TMDiskCacheError(error);
+    });
+
     return moved;
 }
 

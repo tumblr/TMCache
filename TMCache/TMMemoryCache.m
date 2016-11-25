@@ -22,6 +22,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 @synthesize ageLimit = _ageLimit;
 @synthesize costLimit = _costLimit;
 @synthesize totalCost = _totalCost;
+@synthesize defaultCost = _defaultCost;
 @synthesize willAddObjectBlock = _willAddObjectBlock;
 @synthesize willRemoveObjectBlock = _willRemoveObjectBlock;
 @synthesize willRemoveAllObjectsBlock = _willRemoveAllObjectsBlock;
@@ -266,7 +267,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
 - (void)setObject:(id)object forKey:(NSString *)key block:(TMMemoryCacheObjectBlock)block
 {
-    [self setObject:object forKey:key withCost:0 block:block];
+    [self setObject:object forKey:key withCost:_defaultCost block:block];
 }
 
 - (void)setObject:(id)object forKey:(NSString *)key withCost:(NSUInteger)cost block:(TMMemoryCacheObjectBlock)block
@@ -496,7 +497,7 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
 - (void)setObject:(id)object forKey:(NSString *)key
 {
-    [self setObject:object forKey:key withCost:0];
+    [self setObject:object forKey:key withCost:_defaultCost];
 }
 
 - (void)setObject:(id)object forKey:(NSString *)key withCost:(NSUInteger)cost
@@ -865,6 +866,30 @@ NSString * const TMMemoryCachePrefix = @"com.tumblr.TMMemoryCache";
 
         if (costLimit > 0)
             [strongSelf trimToCostLimitByDate:costLimit];
+    });
+}
+
+- (NSUInteger)defaultCost
+{
+    __block NSUInteger defaultCost = 0;
+
+    dispatch_sync(_queue, ^{
+        defaultCost = _defaultCost;
+    });
+
+    return defaultCost;
+}
+
+- (void)setDefaultCost:(NSUInteger)defaultCost
+{
+    __weak TMMemoryCache *weakSelf = self;
+
+    dispatch_barrier_async(_queue, ^{
+        TMMemoryCache *strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+
+        strongSelf->_defaultCost = defaultCost;
     });
 }
 

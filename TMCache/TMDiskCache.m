@@ -862,7 +862,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block TMDiskCacheObjectBlock block = nil;
 
     dispatch_sync(_queue, ^{
-        block = _willAddObjectBlock;
+        block = self->_willAddObjectBlock;
     });
 
     return block;
@@ -886,7 +886,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block TMDiskCacheObjectBlock block = nil;
 
     dispatch_sync(_queue, ^{
-        block = _willRemoveObjectBlock;
+        block = self->_willRemoveObjectBlock;
     });
 
     return block;
@@ -910,7 +910,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block TMDiskCacheBlock block = nil;
 
     dispatch_sync(_queue, ^{
-        block = _willRemoveAllObjectsBlock;
+        block = self->_willRemoveAllObjectsBlock;
     });
 
     return block;
@@ -934,7 +934,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block TMDiskCacheObjectBlock block = nil;
 
     dispatch_sync(_queue, ^{
-        block = _didAddObjectBlock;
+        block = self->_didAddObjectBlock;
     });
 
     return block;
@@ -958,7 +958,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block TMDiskCacheObjectBlock block = nil;
 
     dispatch_sync(_queue, ^{
-        block = _didRemoveObjectBlock;
+        block = self->_didRemoveObjectBlock;
     });
 
     return block;
@@ -982,7 +982,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block TMDiskCacheBlock block = nil;
 
     dispatch_sync(_queue, ^{
-        block = _didRemoveAllObjectsBlock;
+        block = self->_didRemoveAllObjectsBlock;
     });
 
     return block;
@@ -1006,7 +1006,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block NSUInteger byteLimit = 0;
     
     dispatch_sync(_queue, ^{
-        byteLimit = _byteLimit;
+        byteLimit = self->_byteLimit;
     });
     
     return byteLimit;
@@ -1033,7 +1033,7 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
     __block NSTimeInterval ageLimit = 0.0;
     
     dispatch_sync(_queue, ^{
-        ageLimit = _ageLimit;
+        ageLimit = self->_ageLimit;
     });
     
     return ageLimit;
